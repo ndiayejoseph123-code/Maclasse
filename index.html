@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ma salle de classe</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,Arial,sans-serif;background:#f3f4f6;color:#1f2937;padding-bottom:40px}
+header{position:sticky;top:0;z-index:10;background:#1e3a8a;color:#fff;padding:8px 10px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bar input[type=date]{padding:6px;border-radius:6px;border:none;font-size:14px}
+.btn{border:none;border-radius:6px;padding:7px 10px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#1e3a8a}
+.btn.on{background:#fbbf24;color:#222}
+.btn.red{background:#fecaca;color:#991b1b}
+.btn.green{background:#bbf7d0;color:#166534}
+.adm{display:none}
+body.admin .adm{display:inline-block}
+body.admin .vis{display:none}
+.stats{display:flex;gap:6px;margin-top:8px}
+.stat{flex:1;background:rgba(255,255,255,.15);border-radius:8px;text-align:center;padding:4px 2px}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:11px}
+#st{font-size:11px;margin-top:4px;opacity:.9}
+.board{margin:10px auto;width:70%;background:#14532d;color:#fff;text-align:center;border-radius:6px;padding:8px;font-weight:700;border:4px solid #92400e}
+.wrap{overflow-x:auto}
+.room{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 8px;max-width:900px;min-width:640px;margin:auto}
+.coltitle{text-align:center;font-size:12px;font-weight:700;color:#6b7280;margin-bottom:4px}
+.tb{background:#d9b680;border:2px solid #8b5e2b;border-radius:8px;padding:4px;margin-bottom:8px}
+.tbh{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;color:#5b3a12;margin-bottom:3px}
+.plus{display:none;border:none;background:#fff;border-radius:4px;font-size:10px;padding:2px 5px;cursor:pointer}
+body.noms .plus{display:inline-block}
+.seats{display:flex;gap:3px}
+.seat{flex:1;min-width:0;border-radius:5px;border:2px solid #9ca3af;background:#fff;overflow:hidden}
+.seat textarea{display:block;width:100%;height:64px;border:none;background:transparent;padding:4px 2px;font:600 12px system-ui,Arial,sans-serif;text-align:center;color:inherit;outline:none;resize:none;overflow:hidden;word-break:break-word}
+.seat.pres{background:#86efac;border-color:#16a34a;color:#14532d}
+.seat.abs{background:#f87171;border-color:#b91c1c;color:#fff}
+.seat.empty{background:#fff;border-color:#d1d5db}
+body:not(.noms) .seat textarea{pointer-events:none}
+body:not(.noms) .seat.empty{background:#e5e7eb;opacity:.6}
+body:not(.noms) .seat:not(.empty){cursor:pointer}
+body.noms .seat.pres,body.noms .seat.abs{background:#fff;color:#111;border-color:#9ca3af}
+.panel{max-width:900px;margin:12px auto;padding:0 8px}
+details{background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+summary{font-weight:700;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+th,td{padding:5px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{background:#f3f4f6}
+.hint{font-size:12px;color:#6b7280;text-align:center;margin:4px 0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:12px}
+.ov[hidden]{display:none}
+.card{background:#fff;border-radius:12px;width:100%;max-width:420px;max-height:90vh;overflow:auto;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.card h3{margin:0 0 6px;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .x{border:none;background:#e5e7eb;border-radius:50%;width:30px;height:30px;font-size:16px;flex:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700}
+.badge.p{background:#bbf7d0;color:#166534}
+.badge.a{background:#fecaca;color:#991b1b}
+.kpis{display:flex;gap:6px;margin:8px 0}
+.kpi{flex:1;background:#f3f4f6;border-radius:8px;padding:6px;text-align:center;font-size:11px}
+.kpi b{display:block;font-size:17px}
+.lbl{font-size:12px;font-weight:700;color:#374151;margin:10px 0 3px}
+.fld{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:6px;font:14px system-ui,Arial,sans-serif;resize:vertical}
+.ro{background:#f9fafb;border-radius:6px;padding:6px;font-size:14px;white-space:pre-wrap;min-height:30px}
+</style>
+</head>
+<body class="fiches lecture">
+<header>
+  <div class="bar">
+    <input type="date" id="date">
+    <button class="btn adm on" id="m_appel">📋 Appel</button>
+    <button class="btn adm" id="m_noms">✏️ Noms</button>
+    <button class="btn adm" id="m_fiches">👤 Fiches</button>
+    <button class="btn adm green" id="allP">Tous présents</button>
+    <button class="btn adm red" id="reset">Effacer le jour</button>
+    <button class="btn vis" id="login">🔒 Admin</button>
+    <button class="btn adm" id="logout">🔓 Quitter</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="nTot">0</b><span>Effectif</span></div>
+    <div class="stat"><b id="nPres">0</b><span>Présents</span></div>
+    <div class="stat"><b id="nAbs">0</b><span>Absents</span></div>
+    <div class="stat"><b id="nPct">0%</b><span>Présence</span></div>
+  </div>
+  <div id="st">Chargement…</div>
+</header>
+
+<div class="board">TABLEAU</div>
+<div class="hint" id="hint"></div>
+<div class="wrap"><div class="room" id="room"></div></div>
+
+<div class="panel">
+  <details open>
+    <summary>📊 Bilan des absences (tous les jours)</summary>
+    <div id="bilan"></div>
+  </details>
+  <details>
+    <summary>📅 Historique des appels</summary>
+    <div id="histo"></div>
+  </details>
+</div>
+
+<div class="ov" id="fiche" hidden><div class="card" id="ficheBox"></div></div>
+
+<script>
+const KEY='salle_classe_v2', OLD='salle_classe_v1', PEND='salle_classe_pending';
+const API='/.netlify/functions/db';
+
+function pad(n){return String(n).padStart(2,'0')}
+function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function defaultS(){return {tables:Array.from({length:18},()=>({four:false,seats:['','','','']})),att:{},info:{}}}
+function normalize(d){
+  const b=defaultS();
+  if(!d||typeof d!=='object')return b;
+  if(Array.isArray(d.tables))d.tables.slice(0,18).forEach((t,i)=>{
+    if(t&&Array.isArray(t.seats)){b.tables[i].four=!!t.four;for(let s=0;s<4;s++)b.tables[i].seats[s]=String(t.seats[s]||'')}
+  });
+  if(d.att&&typeof d.att==='object')b.att=d.att;
+  if(d.info&&typeof d.info==='object')b.info=d.info;
+  return b;
+}
+function readLocal(){
+  for(const k of [KEY,OLD]){try{const d=JSON.parse(localStorage.getItem(k));if(d&&d.tables)return normalize(d)}catch(e){}}
+  return null;
+}
+
+let S=readLocal()||defaultS();
+let mode='fiches', admin=false, date=today();
+let pwd=''; try{pwd=sessionStorage.getItem('pw')||''}catch(e){}
+let timer=null, saving=false, dirty=false;
+
+const room=document.getElementById('room');
+const dateEl=document.getElementById('date');
+dateEl.value=date;
+function setStatus(t){document.getElementById('st').textContent=t}
+
+async function api(body){
+  const r=await fetch(API,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error||('Erreur '+r.status));e.status=r.status;throw e}
+  return j;
+}
+
+/* ---------- Sauvegarde automatique (GitHub via Netlify) ---------- */
+function changed(){
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  if(!admin)return;
+  try{localStorage.setItem(PEND,'1')}catch(e){}
+  dirty=true;setStatus('⏳ Modifications en attente…');
+  clearTimeout(timer);timer=setTimeout(push,1500);
+}
+async function push(){
+  if(saving){timer=setTimeout(push,1000);return}
+  if(!dirty||!admin)return;
+  saving=true;dirty=false;setStatus('⏳ Enregistrement…');
+  try{
+    await api({action:'save',password:pwd,data:S});
+    if(!dirty){try{localStorage.removeItem(PEND)}catch(e){}setStatus('✅ Enregistré sur GitHub')}
+  }catch(e){
+    dirty=true;
+    if(e.status===401)setStatus('⚠️ Mot de passe refusé');
+    else{setStatus('⚠️ Échec de l’enregistrement, nouvel essai…');timer=setTimeout(push,8000)}
+  }
+  saving=false;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&dirty&&admin){
+    try{navigator.sendBeacon(API,new Blob([JSON.stringify({action:'save',password:pwd,data:S})],{type:'application/json'}))}catch(e){}
+  }
+});
+
+/* ---------- Chargement ---------- */
+async function loadData(){
+  const local=readLocal();
+  let pending=false;try{pending=localStorage.getItem(PEND)==='1'}catch(e){}
+  let remote=null,ok=true;admin=false;
+  try{
+    if(pwd){
+      try{remote=(await api({action:'load',password:pwd})).data;admin=true}
+      catch(e){if(e.status===401){pwd='';try{sessionStorage.removeItem('pw')}catch(_){}}else throw e}
+    }
+    if(!admin)remote=(await api()).data;
+  }catch(e){ok=false}
+
+  if(!ok){S=local||defaultS();setStatus('⚠️ Hors ligne : données locales')}
+  else if(pending&&local){S=local;if(admin){dirty=true;push()}}
+  else if(remote){S=normalize(remote)}
+  else if(local){S=local;if(admin){dirty=true;push()}}
+  else S=defaultS();
+
+  mode=admin?'appel':'fiches';
+  if(ok)setStatus(admin?'🔓 Mode administrateur — enregistrement automatique':'👁 Lecture seule');
+  applyClass();render();
+}
+
+function applyClass(){
+  document.body.className=(admin?mode:'fiches')+' '+(admin?'admin':'lecture');
+  ['appel','noms','fiches'].forEach(m=>document.getElementById('m_'+m).classList.toggle('on',admin&&mode===m));
+}
+
+/* ---------- Salle ---------- */
+function render(){
+  room.innerHTML='';
+  for(let c=0;c<3;c++){
+    const col=document.createElement('div');
+    col.innerHTML='<div class="coltitle">Rangée '+(c+1)+'</div>';
+    for(let r=0;r<6;r++){
+      const ti=c*6+r, t=S.tables[ti];
+      const tb=document.createElement('div');tb.className='tb';
+      const head=document.createElement('div');head.className='tbh';
+      head.innerHTML='<span>Table '+(ti+1)+'</span>';
+      const plus=document.createElement('button');
+      plus.className='plus';plus.textContent=t.four?'− 4e':'+ 4e';
+      plus.onclick=()=>{if(!admin)return;t.four=!t.four;changed();render()};
+      head.appendChild(plus);tb.appendChild(head);
+      const n=t.four?4:3;
+      const seats=document.createElement('div');seats.className='seats';
+      for(let s=0;s<n;s++){
+        const k=ti+'-'+s;
+        const seat=document.createElement('div');
+        seat.className='seat';seat.dataset.k=k;
+        const inp=document.createElement('textarea');
+        inp.value=t.seats[s];inp.placeholder='Élève';inp.maxLength=30;inp.readOnly=!admin;
+        inp.oninput=()=>{inp.value=inp.value.replace(/\n/g,' ');t.seats[s]=inp.value;changed();paint()};
+        inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();inp.blur()}};
+        seat.appendChild(inp);
+        seat.onclick=()=>{
+          if(!t.seats[s].trim())return;
+          if(admin&&mode==='appel'){toggle(k);return}
+          if(!admin||mode==='fiches')openFiche(k);
+        };
+        seats.appendChild(seat);
+      }
+      tb.appendChild(seats);
+      col.appendChild(tb);
+    }
+    room.appendChild(col);
+  }
+  paint();
+}
+
+function toggle(k){
+  const rec=S.att[date]||(S.att[date]={absent:{}});
+  if(rec.absent[k])delete rec.absent[k];else rec.absent[k]=true;
+  changed();paint();
+}
+
+function activeSeats(){
+  const list=[];
+  S.tables.forEach((t,ti)=>{
+    const n=t.four?4:3;
+    for(let s=0;s<n;s++){
+      const name=t.seats[s].trim();
+      if(name)list.push({k:ti+'-'+s,name});
+    }
+  });
+  return list;
+}
+
+function paint(){
+  const rec=S.att[date];
+  const abs=rec?rec.absent:{};
+  document.querySelectorAll('.seat').forEach(el=>{
+    const [ti,s]=el.dataset.k.split('-').map(Number);
+    const has=S.tables[ti].seats[s].trim();
+    el.className='seat '+(!has?'empty':(abs[el.dataset.k]?'abs':'pres'));
+  });
+  const act=activeSeats();
+  const tot=act.length;
+  const na=act.filter(a=>abs[a.k]).length;
+  const np=tot-na;
+  document.getElementById('nTot').textContent=tot;
+  document.getElementById('nPres').textContent=np;
+  document.getElementById('nAbs').textContent=na;
+  document.getElementById('nPct').textContent=tot?Math.round(np*100/tot)+'%':'0%';
+  const hints={appel:'Touchez un élève pour le marquer absent (rouge) / présent (vert).',noms:'Écrivez les noms. « + 4e » ajoute une 4e place à la table.',fiches:'Touchez un élève pour voir sa fiche.'};
+  document.getElementById('hint').textContent=hints[admin?mode:'fiches'];
+
+  const days=Object.keys(S.att).sort();
+  let h='';
+  if(!days.length){h='<div class="hint">Aucun appel enregistré pour le moment.</div>'}
+  else{
+    const rows=act.map(a=>{
+      const n=days.filter(d=>S.att[d].absent[a.k]).length;
+      return {name:a.name,n,pct:Math.round((days.length-n)*100/days.length)};
+    }).sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name));
+    h='<div class="hint" style="text-align:left">'+days.length+' jour(s) d’appel</div><table><tr><th>Élève</th><th>Absences</th><th>Présence</th></tr>'
+      +rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.n+'</td><td>'+r.pct+'%</td></tr>').join('')+'</table>';
+  }
+  document.getElementById('bilan').innerHTML=h;
+
+  let hh='';
+  if(days.length){
+    hh='<table><tr><th>Date</th><th>Prés.</th><th>Abs.</th><th></th></tr>'
+      +days.slice().reverse().map(d=>{
+        const a=act.filter(x=>S.att[d].absent[x.k]).length;
+        return '<tr><td><a href="#" data-d="'+d+'">'+d.split('-').reverse().join('/')+'</a></td><td>'+(act.length-a)+'</td><td>'+a+'</td><td>'+(admin?'<a href="#" data-del="'+d+'">🗑</a>':'')+'</td></tr>';
+      }).join('')+'</table>';
+  }else hh='<div class="hint">Vide.</div>';
+  document.getElementById('histo').innerHTML=hh;
+}
+
+/* ---------- Fiche élève (info-bulle) ---------- */
+const FIELDS=[
+  ['stats','📈 Statistiques / notes (moyenne, rang…)',false],
+  ['perf','⭐ Performances',true],
+  ['faibles','⚠️ Points faibles',true],
+  ['rem','📝 Remarques',true]
+];
+function openFiche(k){
+  const [ti,s]=k.split('-').map(Number);
+  const name=S.tables[ti].seats[s].trim();
+  const days=Object.keys(S.att);
+  const na=days.filter(d=>S.att[d].absent[k]).length;
+  const pct=days.length?Math.round((days.length-na)*100/days.length)+'%':'—';
+  const rec=S.att[date];
+  const inf=S.info[k]||{};
+  const box=document.getElementById('ficheBox');
+  let top='<h3><span>'+esc(name)+'</span><button class="x" id="fx">✕</button></h3>';
+  if(rec){
+    const isAbs=!!rec.absent[k];
+    top+='<span class="badge '+(isAbs?'a':'p')+'">'+date.split('-').reverse().join('/')+' : '+(isAbs?'absent':'présent')+'</span>';
+  }
+  top+='<div class="kpis"><div class="kpi"><b>'+na+'</b>Absences</div><div class="kpi"><b>'+days.length+'</b>Jours d’appel</div><div class="kpi"><b>'+pct+'</b>Présence</div></div>';
+  box.innerHTML=top;
+  FIELDS.forEach(([key,label,multi])=>{
+    const l=document.createElement('div');l.className='lbl';l.textContent=label;box.appendChild(l);
+    if(admin){
+      const el=document.createElement(multi?'textarea':'input');
+      el.className='fld';if(multi)el.rows=3;
+      el.value=inf[key]||'';
+      el.oninput=()=>{(S.info[k]=S.info[k]||{})[key]=el.value;changed()};
+      box.appendChild(el);
+    }else{
+      const d=document.createElement('div');d.className='ro';d.textContent=inf[key]||'—';box.appendChild(d);
+    }
+  });
+  document.getElementById('fx').onclick=closeFiche;
+  document.getElementById('fiche').hidden=false;
+}
+function closeFiche(){document.getElementById('fiche').hidden=true}
+document.getElementById('fiche').onclick=e=>{if(e.target.id==='fiche')closeFiche()};
+
+/* ---------- Actions ---------- */
+document.getElementById('histo').addEventListener('click',e=>{
+  const a=e.target.closest('a');if(!a)return;
+  e.preventDefault();
+  if(a.dataset.d){date=a.dataset.d;dateEl.value=date;paint();window.scrollTo(0,0)}
+  if(a.dataset.del&&admin&&confirm('Supprimer cet appel ?')){delete S.att[a.dataset.del];changed();paint()}
+});
+dateEl.onchange=()=>{if(dateEl.value){date=dateEl.value;paint()}};
+function setMode(m){if(!admin)return;mode=m;applyClass();paint()}
+document.getElementById('m_appel').onclick=()=>setMode('appel');
+document.getElementById('m_noms').onclick=()=>setMode('noms');
+document.getElementById('m_fiches').onclick=()=>setMode('fiches');
+document.getElementById('allP').onclick=()=>{if(!admin)return;S.att[date]={absent:{}};changed();paint()};
+document.getElementById('reset').onclick=()=>{
+  if(admin&&confirm('Effacer l’appel de ce jour ?')){delete S.att[date];changed();paint()}
+};
+document.getElementById('login').onclick=async()=>{
+  const p=prompt('Mot de passe administrateur');if(!p)return;
+  try{await api({action:'login',password:p})}
+  catch(e){alert(e.status===401?'Mot de passe incorrect':'Connexion impossible : '+e.message);return}
+  pwd=p;try{sessionStorage.setItem('pw',p)}catch(e){}
+  await loadData();
+};
+document.getElementById('logout').onclick=async()=>{
+  if(dirty){clearTimeout(timer);await push()}
+  pwd='';try{sessionStorage.removeItem('pw')}catch(e){}
+  await loadData();
+};
+
+applyClass();render();loadData();
+</script>
+</body>
+</html>
